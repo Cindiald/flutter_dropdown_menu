@@ -1,8 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/foundation.dart';
-
 import 'package:flutter/material.dart';
-
 import 'package:dropdown_menu/_src/drapdown_common.dart';
 
 typedef void DropdownMenuHeadTapCallback(int index);
@@ -44,38 +43,67 @@ class DropdownHeader extends DropdownWidget {
 }
 
 class _DropdownHeaderState extends DropdownState<DropdownHeader> {
+  var _selected = [];
+  int _activeIndex;
+  List<dynamic> _titles;
+  List<dynamic> _defaultTitles;
+
   Widget buildItem(
       BuildContext context, dynamic title, bool selected, int index) {
-    final Color primaryColor = Theme.of(context).primaryColor;
-    final Color unselectedColor = Theme.of(context).unselectedWidgetColor;
-    final GetItemLabel getItemLabel = widget.getItemLabel;
-
+    final Color primaryColor = Color(0xFF3C7AFF);
+    final Color unselectedColor = Colors.black;
+    final GetItemLabel getItemLabel = widget.getItemLabel;// title 打开蓝色，未打开默认黑色，未打开有选中蓝色且显示缩略文字
+    bool _isDefaultTitle = title == _defaultTitles[index];
     return new GestureDetector(
       behavior: HitTestBehavior.opaque,
       child: new Padding(
           padding: new EdgeInsets.fromLTRB(0.0, 10.0, 0.0, 10.0),
           child: new DecoratedBox(
               decoration: new BoxDecoration(
-                  border: new Border(left: Divider.createBorderSide(context))),
-              child: new Center(
-                  child: new Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                    new Text(
-                      getItemLabel(title),
-                      style: new TextStyle(
-                        color: selected ? primaryColor : unselectedColor,
+//                  border: new Border(left: Divider.createBorderSide(context))
+              ),
+              child: new Container(
+                child: _isDefaultTitle ? new Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: <Widget>[
+                    Container(
+                      child: new Text(
+                          getItemLabel(title),
+                          style: new TextStyle(
+                            color: selected ? primaryColor : unselectedColor,
+                          ),
+                          softWrap: true,
+                          overflow: TextOverflow.ellipsis
                       ),
                     ),
-                    new Icon(
+                    _isDefaultTitle ? new Icon(
                       selected ? Icons.arrow_drop_up : Icons.arrow_drop_down,
                       color: selected ? primaryColor : unselectedColor,
-                    )
-                  ])))),
+                    ) : Container()
+                ]): Container(
+                  height: 46.0,
+                  width: MediaQuery.of(context).size.width / 4 - 24,
+                  padding: EdgeInsets.symmetric(horizontal: 10.0),
+                  margin: EdgeInsets.symmetric(horizontal: 2.0),
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: Color(0xFFEFF4FF),
+                    borderRadius: BorderRadius.all(Radius.circular(24.0))
+                  ),
+                  child: new Text(
+                      getItemLabel(title),
+                      style: new TextStyle(
+                        color: primaryColor,
+                      ),
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis
+                  ),
+                )
+              ))),
       onTap: () {
         if (widget.onTap != null) {
           widget.onTap(index);
-
           return;
         }
         if (controller != null) {
@@ -93,13 +121,9 @@ class _DropdownHeaderState extends DropdownState<DropdownHeader> {
     );
   }
 
-  int _activeIndex;
-  List<dynamic> _titles;
-
   @override
   Widget build(BuildContext context) {
     List<Widget> list = [];
-
     final int activeIndex = _activeIndex;
     final List<dynamic> titles = _titles;
     final double height = widget.height;
@@ -133,6 +157,7 @@ class _DropdownHeaderState extends DropdownState<DropdownHeader> {
   @override
   void initState() {
     _titles = widget.titles;
+    _defaultTitles = json.decode(json.encode(widget.titles));
     super.initState();
   }
 
@@ -142,10 +167,23 @@ class _DropdownHeaderState extends DropdownState<DropdownHeader> {
       case DropdownEvent.SELECT:
         {
           if (_activeIndex == null) return;
-
+          String labelText = '';
+          if(controller.data == null){
+            labelText = _defaultTitles[controller.menuIndex];
+          }else if(controller.data.length > 0){
+            for(int i = 0; i < controller.data.length; i++){
+              if(controller.data[i] != null && controller.data[i]["title"] != null){
+                labelText += controller.data[i]["title"];
+              }
+              if(i < controller.data.length - 1){
+                labelText += ',';
+              }
+            }
+          }
+//          print(labelText);
           setState(() {
             _activeIndex = null;
-            String label = widget.getItemLabel(controller.data);
+            String label = widget.getItemLabel(labelText);
             _titles[controller.menuIndex] = label;
           });
         }
@@ -163,6 +201,16 @@ class _DropdownHeaderState extends DropdownState<DropdownHeader> {
           if (_activeIndex == controller.menuIndex) return;
           setState(() {
             _activeIndex = controller.menuIndex;
+          });
+        }
+        break;
+      case DropdownEvent.RESET:
+        {
+          if (_activeIndex == null) return;
+          setState(() {
+            _activeIndex = null;
+            String label = widget.getItemLabel(controller.data);
+            _titles[controller.menuIndex] = label;
           });
         }
         break;

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:dropdown_menu/_src/dropdown_header.dart';
 
+Color selectedColor = Color(0xFF3C7AFF);
 Widget buildCheckItem(BuildContext context, dynamic data, bool selected) {
   return new Padding(
       padding: new EdgeInsets.all(10.0),
@@ -14,7 +15,8 @@ Widget buildCheckItem(BuildContext context, dynamic data, bool selected) {
             style: selected
                 ? new TextStyle(
                     fontSize: 14.0,
-                    color: Theme.of(context).primaryColor,
+                    color: selectedColor,
+//                    color: Colors.red,
                     fontWeight: FontWeight.w400)
                 : new TextStyle(fontSize: 14.0),
           ),
@@ -24,7 +26,7 @@ Widget buildCheckItem(BuildContext context, dynamic data, bool selected) {
             child: selected
                 ? new Icon(
                     Icons.check,
-                    color: Theme.of(context).primaryColor,
+                    color: selectedColor,
                   )
                 : null,
           )),

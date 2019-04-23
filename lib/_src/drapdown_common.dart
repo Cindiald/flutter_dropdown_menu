@@ -9,7 +9,11 @@ enum DropdownEvent {
   ACTIVE,
 
   // user has click menu item
-  SELECT
+  SELECT,
+
+  RESET,
+
+  CONFIRM
 }
 
 class DropdownMenuController extends ChangeNotifier {
@@ -21,6 +25,8 @@ class DropdownMenuController extends ChangeNotifier {
 
   /// selected data
   dynamic data;
+
+  var selected;
 
   /// item index in list [TreeMenuList] or [MenuList] or your custom menu
   int index;
@@ -39,9 +45,27 @@ class DropdownMenuController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void select(dynamic data, {int index, int subIndex}) {
+  void select(dynamic data, {int index, selected, int subIndex}) {
+//    print(selected);
     event = DropdownEvent.SELECT;
     this.data = data;
+    this.selected = selected;
+    this.index = index;
+    this.subIndex = subIndex;
+    notifyListeners();
+  }
+
+  void reset(dynamic data, {int index, selected, int subIndex}) {
+    print('reset');
+    event = DropdownEvent.RESET;
+    notifyListeners();
+  }
+
+  void confirm(dynamic data, {int index, selected, int subIndex}) {
+    print(data);
+    event = DropdownEvent.CONFIRM;
+    this.data = data;
+    this.selected = selected;
     this.index = index;
     this.subIndex = subIndex;
     notifyListeners();
@@ -49,7 +73,7 @@ class DropdownMenuController extends ChangeNotifier {
 }
 
 typedef DropdownMenuOnSelected(
-    {int menuIndex, int index, int subIndex, dynamic data});
+    {int menuIndex, int index, selected, int subIndex, dynamic data});
 
 class DefaultDropdownMenuController extends StatefulWidget {
   const DefaultDropdownMenuController({
@@ -93,6 +117,7 @@ class _DefaultDropdownMenuControllerState
           if (widget.onSelected == null) return;
           widget.onSelected(
               data: _controller.data,
+              selected: _controller.selected,
               menuIndex: _controller.menuIndex,
               index: _controller.index,
               subIndex: _controller.subIndex);
@@ -101,6 +126,10 @@ class _DefaultDropdownMenuControllerState
       case DropdownEvent.ACTIVE:
         break;
       case DropdownEvent.HIDE:
+        break;
+      case DropdownEvent.RESET:
+        break;
+      case DropdownEvent.CONFIRM:
         break;
     }
   }

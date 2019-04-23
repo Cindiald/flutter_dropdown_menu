@@ -17,6 +17,8 @@ enum DropdownMenuShowHideSwitchStyle {
   animationShowUntilAnimationHideComplete,
 }
 
+Color panalColor = Colors.white;
+
 class DropdownMenu extends DropdownWidget {
   /// menus whant to show
   final List<DropdownMenuBuilder> menus;
@@ -30,6 +32,7 @@ class DropdownMenu extends DropdownWidget {
   final double blur;
 
   final VoidCallback onHide;
+  final bool multi;
 
   /// The style when one menu hide and another menu show ,
   /// see [DropdownMenuShowHideSwitchStyle]
@@ -45,6 +48,7 @@ class DropdownMenu extends DropdownWidget {
       this.onHide,
       this.blur,
       Key key,
+      this.multi,
       this.maxMenuHeight,
       Curve hideCurve,
       this.switchStyle: DropdownMenuShowHideSwitchStyle
@@ -150,7 +154,7 @@ class _DropdownMenuState extends DropdownState<DropdownMenu>
   void _updateHeights() {
     for (int i = 0, c = widget.menus.length; i < c; ++i) {
       _dropdownAnimations[i].height =
-          _ensureHeight(_getHeight(widget.menus[i]));
+          _ensureHeight(_getHeight(widget.menus[i])) + 48.0 ;
     }
   }
 
@@ -167,7 +171,7 @@ class _DropdownMenuState extends DropdownState<DropdownMenu>
     return new ClipRect(
       clipper: new SizeClipper(),
       child: new SizedBox(
-          height: _ensureHeight(builder.height),
+          height: _ensureHeight(builder.height) + 48.0,
           child: _showing.contains(i) ? builder.builder(context) : null),
     );
   }
@@ -190,9 +194,6 @@ class _DropdownMenuState extends DropdownState<DropdownMenu>
   @override
   Widget build(BuildContext context) {
     List<Widget> list = [];
-
-    print("build ${new DateTime.now()}");
-
     if (_show) {
       list.add(
         new FadeTransition(
@@ -210,7 +211,7 @@ class _DropdownMenuState extends DropdownState<DropdownMenu>
           child: new Align(
               alignment: Alignment.topCenter,
               child: new Container(
-                color: Theme.of(context).scaffoldBackgroundColor,
+                color: panalColor,
                 child: createMenu(context, widget.menus[i], i),
               ))));
     }
@@ -224,6 +225,7 @@ class _DropdownMenuState extends DropdownState<DropdownMenu>
   }
 
   TickerFuture onHide({bool dispatch: true}) {
+//    print(_activeIndex);
     if (_activeIndex != null) {
       int index = _activeIndex;
       _activeIndex = null;
@@ -232,7 +234,6 @@ class _DropdownMenuState extends DropdownState<DropdownMenu>
         if (controller != null) {
           controller.hide();
         }
-
         //if (widget.onHide != null) widget.onHide();
       }
 
@@ -260,6 +261,9 @@ class _DropdownMenuState extends DropdownState<DropdownMenu>
 
   Future<void> onShow(int index) {
     //哪一个是要展示的
+//    print('1111');
+//    print(index);
+//    print(_activeIndex);
 
     assert(index >= 0 && index < _dropdownAnimations.length);
     if (!_showing.contains(index)) {
@@ -345,6 +349,8 @@ class _DropdownMenuState extends DropdownState<DropdownMenu>
   void onEvent(DropdownEvent event) {
     switch (event) {
       case DropdownEvent.SELECT:
+      case DropdownEvent.RESET:
+      case DropdownEvent.CONFIRM:
       case DropdownEvent.HIDE:
         {
           onHide(dispatch: false);

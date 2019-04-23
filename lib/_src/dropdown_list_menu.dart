@@ -12,6 +12,7 @@ const double kDropdownMenuItemHeight = 45.0;
 class DropdownListMenu<T> extends DropdownWidget {
   final List<T> data;
   final int selectedIndex;
+  final selected;
   final MenuItemBuilder itemBuilder;
   final double itemExtent;
 
@@ -19,6 +20,7 @@ class DropdownListMenu<T> extends DropdownWidget {
       {this.data,
       this.selectedIndex,
       this.itemBuilder,
+      this.selected,
       this.itemExtent: kDropdownMenuItemHeight});
 
   @override
@@ -29,9 +31,11 @@ class DropdownListMenu<T> extends DropdownWidget {
 
 class _MenuListState<T> extends DropdownState<DropdownListMenu<T>> {
   int _selectedIndex;
+  var _selected = [];
 
   @override
   void initState() {
+    _selected = widget.selected ?? [];
     _selectedIndex = widget.selectedIndex;
     super.initState();
   }
@@ -42,30 +46,79 @@ class _MenuListState<T> extends DropdownState<DropdownListMenu<T>> {
     final T data = list[index];
     return new GestureDetector(
       behavior: HitTestBehavior.opaque,
-      child: widget.itemBuilder(context, data, index == _selectedIndex),
+//      child: widget.itemBuilder(context, data, index == _selectedIndex),
+      child: widget.itemBuilder(context, data, _selected.contains(index)),
       onTap: () {
+        if(_selected.contains(index)){
+          _selected.remove(index);
+        }else{
+          _selected.add(index);
+        }
         setState(() {
           _selectedIndex = index;
         });
         assert(controller != null);
-        controller.select(data, index: index);
+//        controller.select(data, index: index, selected: _selected);
       },
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return new ListView.builder(
-      itemExtent: widget.itemExtent,
-      itemBuilder: buildItem,
-      itemCount: widget.data.length,
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: new ListView.builder(
+            itemExtent: widget.itemExtent,
+            itemBuilder: buildItem,
+            itemCount: widget.data.length,
+          ),
+        ),
+        Container(
+          height: 48.0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              GestureDetector(
+                onTap: (){
+                  _selected.clear();
+                  controller.select(null, selected: _selected);
+                },
+                child: Text('重置'),
+              ),
+              GestureDetector(
+                onTap: (){
+                  final List<T> list = widget.data;
+                  if(_selected == null || _selected.length == 0){
+                    controller.select(null, selected: _selected); // TODO 设置默认title
+                    return;
+                  }
+                  List selectedData = [];
+                  _selected.forEach((v){
+                    selectedData.add(list[v]);
+                  });
+                  controller.select(selectedData, selected: _selected);
+                },
+                child: Text('确定'),
+              )
+            ],
+          ),
+        )
+      ],
     );
+//    return new ListView.builder(
+//      itemExtent: widget.itemExtent,
+//      itemBuilder: buildItem,
+//      itemCount: widget.data.length,
+//    );
   }
 
   @override
   void onEvent(DropdownEvent event) {
     switch (event) {
       case DropdownEvent.SELECT:
+      case DropdownEvent.RESET:
+      case DropdownEvent.CONFIRM:
       case DropdownEvent.HIDE:
         {}
         break;
@@ -153,7 +206,6 @@ class _TreeMenuList<T, E> extends DropdownState<DropdownTreeMenu> {
   int _subSelectedIndex;
   int _selectedIndex;
 
-  //
   int _activeIndex;
 
   List<E> _subData;
@@ -210,6 +262,7 @@ class _TreeMenuList<T, E> extends DropdownState<DropdownTreeMenu> {
       onTap: () {
         //切换
         //拿到数据
+//        print(data);
         setState(() {
           _subData = widget.getSubData(data);
           _activeIndex = index;
